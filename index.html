@@ -70,6 +70,17 @@ button:hover{
   transform:translateY(-1px);
 }
 
+/* 초기화 버튼 전용 스타일 */
+.btn-reset {
+  background: #3182f6;
+  color: white;
+}
+.btn-reset:hover {
+  background: #1b64da;
+  color: white;
+  transform:translateY(-1px);
+}
+
 /* input */
 input, select{
   border:1px solid #dbe2ea;
@@ -173,22 +184,28 @@ input[type="checkbox"]{
 
 <h2>📊 상담 배정 시스템</h2>
 
-<div style="margin-bottom:10px;">
-<b>🎯 오늘 시작 상담사</b><br>
+<div style="margin-bottom:10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+  <div>
+    <b>🎯 오늘 시작 상담사</b><br>
 
-<select id="startSelect"></select>
-<button onclick="setStart()">설정</button>
+    <select id="startSelect"></select>
+    <button onclick="setStart()">설정</button>
 
-<span id="currentStart" style="margin-left:10px; font-weight:bold;"></span>
-<span id="prevStart" style="margin-left:10px; color:#666;"></span>
+    <span id="currentStart" style="margin-left:10px; font-weight:bold;"></span>
+    <span id="prevStart" style="margin-left:10px; color:#666;"></span>
 
-<button onclick="goBack()" style="margin-left:14px;">
-⬅️ 뒤로가기
-</button>
+    <button onclick="goBack()" style="margin-left:14px;">
+    ⬅️ 뒤로가기
+    </button>
 
-<button onclick="goForward()">
-➡️ 앞으로가기
-</button>
+    <button onclick="goForward()">
+    ➡️ 앞으로가기
+    </button>
+  </div>
+
+  <button onclick="resetAllData()" class="btn-reset">
+  🧹 오늘 데이터 초기화
+  </button>
 </div>
 
 <div class="top-container">
@@ -335,11 +352,46 @@ font-size:15px;
     }
   };
 
+  // ⚠️ [새로 추가] 원본 명단을 훼손하지 않고 카운트와 로그만 0으로 비우는 안전 초기화 기능
+  window.resetAllData = async function() {
+    if(!confirm("⚠️ 정말 오늘 데이터를 전체 초기화하시겠습니까?\n모든 상담사 카운트와 로그가 0으로 초기화되며 되돌릴 수 없습니다.")) {
+      return;
+    }
+    
+    // 명단의 순서와 구성은 100% 놔두고 오늘 쌓인 카운트 데이터만 포맷합니다.
+    window.consultants.forEach(c => {
+      c.eng = 0;
+      c.total = 0;
+      c.krTotal = 0;
+      c.kmtHistory = "";
+      c.krHistory = "";
+      c.status = "on";
+      c.off = false;
+    });
+    
+    window.logs = [];
+    window.startIdx = 0;
+    
+    // 로컬 원본 변수 데이터 동기화
+    if(typeof consultants !== 'undefined') {
+      consultants = window.consultants;
+      logs = window.logs;
+      startIdx = window.startIdx;
+    }
+    
+    localStorage.removeItem("currentStartName");
+    localStorage.removeItem("prevStartName");
+    
+    // 서버 저장 및 화면 갱신
+    await window.saveToFirebase();
+    alert("🧹 초기화 완료! 오늘 하루도 화이팅하세요! ✨");
+    window.render();
+  };
+
   onSnapshot(doc(db, "hospital", "vibe_board"), (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.data();
       
-      // 기존 전역 변수(원래 자바스크립트 소스)와 파이어베이스 실시간 데이터 완벽 동기화
       window.consultants = data.consultants || window.consultants;
       window.logs = data.logs || window.logs;
       window.startIdx = data.startIdx || window.startIdx;
