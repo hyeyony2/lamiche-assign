@@ -323,6 +323,7 @@ font-size:15px;
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  // 파이어베이스에 데이터를 전송하여 실시간 저장하는 핵심 함수
   window.saveToFirebase = async function() {
     try {
       await setDoc(doc(db, "hospital", "vibe_board"), {
@@ -335,20 +336,13 @@ font-size:15px;
     }
   };
 
+  // 다른 PC에서 데이터를 바꿨을 때 실시간으로 수신해서 화면을 바꾸는 감지기
   onSnapshot(doc(db, "hospital", "vibe_board"), (snapshot) => {
     if (snapshot.exists()) {
       const data = snapshot.data();
-      
-      // 기존 전역 변수(원래 자바스크립트 소스)와 파이어베이스 실시간 데이터 완벽 동기화
       window.consultants = data.consultants || window.consultants;
       window.logs = data.logs || window.logs;
       window.startIdx = data.startIdx || window.startIdx;
-      
-      if(typeof consultants !== 'undefined') {
-        consultants = window.consultants;
-        logs = window.logs;
-        startIdx = window.startIdx;
-      }
       window.render();
     } else {
       window.saveToFirebase();
@@ -378,6 +372,7 @@ let startIdx = 0;
 let historyStack = [];
 let historyIndex = -1;
 
+// 전역 연동을 위해 window 객체에 등록
 window.consultants = consultants;
 window.logs = logs;
 window.startIdx = startIdx;
@@ -397,14 +392,14 @@ function toggle(i){
   else if(s==="busy") consultants[i].status="away";
   else consultants[i].status="on";
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
 function toggleOff(i){
   consultants[i].off=!consultants[i].off;
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -415,7 +410,7 @@ function setStart(){
   localStorage.setItem("currentStartName", name);
   rotateConsultants(name);
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -501,7 +496,7 @@ function assign(type){
   alert(`✅ ${c.name} 배정 (${count}명)`);
   document.getElementById("customerCount").value = 1;
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -517,7 +512,7 @@ function assignException(){
   else { c.total += count; c.kmtHistory += count; }
   addLog(c.name, type, "예외", note);
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -528,7 +523,7 @@ function minusTotal(){
   if(c.total>0)c.total--;
   addLog(c.name,"-","차감",note);
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -539,7 +534,7 @@ function minusKr(){
   if(c.krTotal > 0) c.krTotal--;
   addLog(c.name, "KR", "차감", note);
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -550,7 +545,7 @@ function minusEng(){
   if(c.eng>0)c.eng--;
   addLog(c.name,"EN","차감",note);
   saveState();
-  if(window.saveToFirebase) window.saveToFirebase();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
   render();
 }
 
@@ -688,6 +683,7 @@ function render(){
   document.getElementById("previewResult").innerHTML = `기타: ${otherPreview.join(" → ")}<br>한국: ${krPreview.join(" → ")}`;
 }
 
+// 브라우저 윈도우 스코프 등록용
 window.render = render;
 
 window.onload=function(){
