@@ -70,6 +70,13 @@ button:hover{
   transform:translateY(-1px);
 }
 
+button:disabled {
+  background: #d1d6db !important;
+  color: #8b95a1 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}
+
 /* 초기화 버튼 전용 스타일 */
 .btn-reset {
   background: #3182f6;
@@ -96,6 +103,12 @@ input, select{
 input:focus, select:focus{
   border-color:#3182f6;
   box-shadow: 0 0 0 4px rgba(49,130,246,0.12);
+}
+
+input:disabled, select:disabled {
+  background: #f2f4f6 !important;
+  color: #b0b8c1 !important;
+  cursor: not-allowed !important;
 }
 
 /* 테이블 */
@@ -178,58 +191,70 @@ input[type="checkbox"]{
 .log-table th{ padding:10px 14px; font-size:12px; }
 .log-table td{ padding:10px 14px; font-size:13px; white-space:nowrap; }
 
+/* 관리자 전용 비활성화 스타일 */
+.admin-only-box {
+  position: relative;
+}
+.admin-locked {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 </style>
 </head>
 <body>
 
-<h2>📊 상담 배정 시스템</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;">
+  <h2 style="margin: 0;">📊 상담 배정 시스템</h2>
+  <button id="adminAuthBtn" onclick="toggleAdminAuth()" style="background: #4e5968; font-size: 13px; padding: 8px 14px;">🔓 관리자 인증</button>
+</div>
 
 <div style="margin-bottom:10px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
   <div>
     <b>🎯 오늘 시작 상담사</b><br>
 
-    <select id="startSelect"></select>
-    <button onclick="setStart()">설정</button>
+    <select id="startSelect" class="admin-field"></select>
+    <button onclick="setStart()" class="admin-btn">설정</button>
 
     <span id="currentStart" style="margin-left:10px; font-weight:bold;"></span>
     <span id="prevStart" style="margin-left:10px; color:#666;"></span>
 
-    <button onclick="goBack()" style="margin-left:14px;">
+    <button onclick="goBack()" class="admin-btn" style="margin-left:14px;">
     ⬅️ 뒤로가기
     </button>
 
-    <button onclick="goForward()">
+    <button onclick="goForward()" class="admin-btn">
     ➡️ 앞으로가기
     </button>
   </div>
 
-  <button onclick="resetAllData()" class="btn-reset">
+  <button onclick="resetAllData()" class="btn-reset admin-btn">
   🧹 오늘 데이터 초기화
   </button>
 </div>
 
 <div class="top-container">
 
-<div class="box">
+<div class="box admin-only-box">
 <h3>🚀 자동 배정</h3>
 
 👥 인원:
-<input type="number" id="customerCount" value="1" min="1" style="width:60px;">
+<input type="number" id="customerCount" value="1" min="1" style="width:60px;" class="admin-field">
 
 <br>
 
-<button onclick="assign('KR')">🇰🇷 한국</button>
-<button onclick="assign('EN')">🌍 영어</button>
-<button onclick="assign('CN')">🇨🇳 중국</button>
-<button onclick="assign('JP')">🇯🇵 일본</button>
-<button onclick="assign('OTHER')">🌐 기타</button>
+<button onclick="assign('KR')" class="admin-btn">🇰🇷 한국</button>
+<button onclick="assign('EN')" class="admin-btn">🌍 영어</button>
+<button onclick="assign('CN')" class="admin-btn">🇨🇳 중국</button>
+<button onclick="assign('JP')" class="admin-btn">🇯🇵 일본</button>
+<button onclick="assign('OTHER')" class="admin-btn">🌐 기타</button>
 </div>
 
-<div class="box">
+<div class="box admin-only-box">
 <h3>⚡ 예외 배정</h3>
-<select id="exceptionName"></select>
+<select id="exceptionName" class="admin-field"></select>
 
-<select id="exceptionType">
+<select id="exceptionType" class="admin-field">
 <option value="KR">한국</option>
 <option value="EN">영어</option>
 <option value="CN">중국</option>
@@ -238,19 +263,19 @@ input[type="checkbox"]{
 </select>
 
 👥 인원:
-<input type="number" id="exceptionCount" value="1" min="1" style="width:60px;">
+<input type="number" id="exceptionCount" value="1" min="1" style="width:60px;" class="admin-field">
 
-<input id="note" placeholder="사유 입력 ✍️">
+<input id="note" placeholder="사유 입력 ✍️" class="admin-field">
 
-<button onclick="assignException()">예외 배정</button>
+<button onclick="assignException()" class="admin-btn">예외 배정</button>
 </div>
 
-<div class="box">
+<div class="box admin-only-box">
 <h3>➖ 카운트 차감</h3>
-<select id="adjustName"></select>
-<input id="minusNote" placeholder="사유 필수 ✍️">
-<button onclick="minusTotal()">KMT -1</button>
-<button onclick="minusKr()">한국 -1</button>
+<select id="adjustName" class="admin-field"></select>
+<input id="minusNote" placeholder="사유 필수 ✍️" class="admin-field">
+<button onclick="minusTotal()" class="admin-btn">KMT -1</button>
+<button onclick="minusKr()" class="admin-btn">한국 -1</button>
 
 </div>
 
@@ -433,6 +458,55 @@ let historyIndex = -1;
 window.consultants = consultants;
 window.logs = logs;
 window.startIdx = startIdx;
+
+// 🔒 보안 설정
+const ADMIN_PASSWORD = "1234"; // 👈 사용할 관리자 비밀번호 입력
+let isAdmin = false;
+
+function toggleAdminAuth() {
+  if (isAdmin) {
+    isAdmin = false;
+    localStorage.removeItem("isSystemAdmin");
+    alert("🔒 관리자 로그아웃 되었습니다. 일반 모드로 전환합니다.");
+  } else {
+    let pw = prompt("🔑 관리자 비밀번호를 입력하세요:");
+    if (pw === ADMIN_PASSWORD) {
+      isAdmin = true;
+      localStorage.setItem("isSystemAdmin", "true");
+      alert("🔓 관리자 인증 성공! 제어 권한이 활성화되었습니다.");
+    } else if (pw !== null) {
+      alert("❌ 비밀번호가 틀렸습니다.");
+    }
+  }
+  applyAdminLock();
+}
+
+function applyAdminLock() {
+  const btnBtn = document.getElementById("adminAuthBtn");
+  if (isAdmin) {
+    btnBtn.innerText = "🔒 관리자 로그아웃";
+    btnBtn.style.background = "#df2222";
+  } else {
+    btnBtn.innerText = "🔓 관리자 인증";
+    btnBtn.style.background = "#4e5968";
+  }
+
+  // 상단 카드 컨테이너 제어박스 잠금 효과
+  document.querySelectorAll(".admin-only-box").forEach(box => {
+    if (isAdmin) box.classList.remove("admin-locked");
+    else box.classList.add("admin-locked");
+  });
+
+  // 버튼들잠금
+  document.querySelectorAll(".admin-btn").forEach(btn => {
+    btn.disabled = !isAdmin;
+  });
+
+  // 셀렉트 및 인풋 잠금
+  document.querySelectorAll(".admin-field").forEach(field => {
+    field.disabled = !isAdmin;
+  });
+}
 
 function rotateConsultants(startName){
   let idx = consultants.findIndex(c => c.name === startName);
@@ -738,11 +812,18 @@ function render(){
     }
   }
   document.getElementById("previewResult").innerHTML = `기타: ${otherPreview.join(" → ")}<br>한국: ${krPreview.join(" → ")}`;
+  
+  // 렌더링 후 잠금 상태 다시 적용
+  applyAdminLock();
 }
 
 window.render = render;
 
 window.onload=function(){
+  // 로컬스토리지 기반 이전 인증 상태 체크
+  if (localStorage.getItem("isSystemAdmin") === "true") {
+    isAdmin = true;
+  }
   render();
   historyStack = [];
   historyIndex = -1;
@@ -752,6 +833,13 @@ window.onload=function(){
 document.addEventListener("keydown", function(e){
   let tag = document.activeElement.tagName;
   if(tag === "INPUT" || tag === "TEXTAREA") return;
+  
+  // 관리자가 아닐 때는 단축키를 통한 뒤로가기/앞으로가기 차단
+  if(!isAdmin && e.ctrlKey && (e.key === "z" || e.key === "y" || e.key === "Z")) {
+    e.preventDefault();
+    return;
+  }
+
   if(e.ctrlKey && e.key === "z"){ e.preventDefault(); goBack(); }
   if(e.ctrlKey && e.key === "y"){ e.preventDefault(); goForward(); }
   if(e.ctrlKey && e.shiftKey && e.key === "Z"){ e.preventDefault(); goForward(); }
