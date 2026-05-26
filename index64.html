@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>상담 배정 시스템 🚀</title>
+<style>
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  padding:28px;
+  font-family:'Pretendard', sans-serif;
+  background:#f5f7fb;
+  color:#191f28;
+}
+
+/* 제목 */
+h2{
+  font-size:32px;
+  font-weight:700;
+  margin-bottom:28px;
+  letter-spacing:-0.8px;
+}
+
+h3{
+  margin-top:0;
+  margin-bottom:18px;
+  font-size:18px;
+  font-weight:700;
+  color:#191f28;
+}
+
+/* 카드 영역 */
+.top-container{
+  display:grid;
+  grid-template-columns: repeat(auto-fit,minmax(280px,1fr));
+  gap:18px;
+  margin-bottom:24px;
+}
+
+/* 카드 */
+.box{
+  background:white;
+  border-radius:24px;
+  padding:22px;
+  box-shadow: 0 2px 12px rgba(15,23,42,0.04);
+  border:1px solid #eef2f6;
+}
+
+/* 버튼 */
+button{
+  border:none;
+  background:#3182f6;
+  color:white;
+  border-radius:14px;
+  padding:11px 16px;
+  font-weight:700;
+  cursor:pointer;
+  transition:0.15s ease;
+  margin:4px;
+}
+
+button:hover{
+  background:#1b64da;
+  transform:translateY(-1px);
+}
+
+/* input */
+input, select{
+  border:1px solid #dbe2ea;
+  background:white;
+  border-radius:14px;
+  padding:10px 12px;
+  font-size:14px;
+  color:#191f28;
+  outline:none;
+  margin:4px 0;
+}
+
+input:focus, select:focus{
+  border-color:#3182f6;
+  box-shadow: 0 0 0 4px rgba(49,130,246,0.12);
+}
+
+/* 테이블 */
+table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  overflow:hidden;
+  border-radius:24px;
+  background:white;
+  box-shadow: 0 2px 12px rgba(15,23,42,0.04);
+  border:1px solid #eef2f6;
+}
+
+/* 헤더 */
+th{
+  background:#f9fafc;
+  color:#6b7684;
+  font-size:13px;
+  font-weight:700;
+  padding:16px;
+  border-bottom:1px solid #eef2f6;
+}
+
+/* 셀 */
+td{
+  padding:16px;
+  border-bottom:1px solid #f2f4f6;
+  font-size:14px;
+}
+
+/* 마지막 줄 */
+tr:last-child td{
+  border-bottom:none;
+}
+
+/* hover */
+tr:hover{
+  background:#f9fbff;
+}
+
+/* 상태별 */
+.on{ background:#dcf7e4; }
+.busy{ background:#fff5dc; }
+.away{ background:#ffe4e4; }
+.off{ background:#e1e5eb; opacity:0.78; }
+
+/* 로그 */
+.minus-row{ background:#fff1f1; }
+.exception-row{ background:#f2f8ff; }
+
+/* preview */
+#previewResult{
+  margin-top:14px;
+  font-size:18px;
+  font-weight:700;
+  color:#3182f6;
+}
+
+/* 시작 상담사 */
+#currentStart{
+  font-size:15px;
+  color:#4e5968;
+}
+
+/* 체크박스 */
+input[type="checkbox"]{
+  accent-color:#3182f6;
+  transform:scale(1.05);
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar{ width:10px; }
+::-webkit-scrollbar-thumb{ background:#cfd6dd; border-radius:999px; }
+::-webkit-scrollbar-track{ background:transparent; }
+
+/* 로그 전용 */
+.log-container{ width:fit-content; max-width:900px; }
+.log-table{ width:auto !important; min-width:650px; }
+.log-table th{ padding:10px 14px; font-size:12px; }
+.log-table td{ padding:10px 14px; font-size:13px; white-space:nowrap; }
+
+</style>
+</head>
+<body>
+
+<h2>📊 상담 배정 시스템</h2>
+
+<div style="margin-bottom:10px;">
+<b>🎯 오늘 시작 상담사</b><br>
+
+<select id="startSelect"></select>
+<button onclick="setStart()">설정</button>
+
+<span id="currentStart" style="margin-left:10px; font-weight:bold;"></span>
+<span id="prevStart" style="margin-left:10px; color:#666;"></span>
+
+<button onclick="goBack()" style="margin-left:14px;">
+⬅️ 뒤로가기
+</button>
+
+<button onclick="goForward()">
+➡️ 앞으로가기
+</button>
+</div>
+
+<div class="top-container">
+
+<div class="box">
+<h3>🚀 자동 배정</h3>
+
+👥 인원:
+<input type="number" id="customerCount" value="1" min="1" style="width:60px;">
+
+<br>
+
+<button onclick="assign('KR')">🇰🇷 한국</button>
+<button onclick="assign('EN')">🌍 영어</button>
+<button onclick="assign('CN')">🇨🇳 중국</button>
+<button onclick="assign('JP')">🇯🇵 일본</button>
+<button onclick="assign('OTHER')">🌐 기타</button>
+</div>
+
+<div class="box">
+<h3>⚡ 예외 배정</h3>
+<select id="exceptionName"></select>
+
+<select id="exceptionType">
+<option value="KR">한국</option>
+<option value="EN">영어</option>
+<option value="CN">중국</option>
+<option value="JP">일본</option>
+<option value="OTHER">기타</option>
+</select>
+
+👥 인원:
+<input type="number" id="exceptionCount" value="1" min="1" style="width:60px;">
+
+<input id="note" placeholder="사유 입력 ✍️">
+
+<button onclick="assignException()">예외 배정</button>
+</div>
+
+<div class="box">
+<h3>➖ 카운트 차감</h3>
+<select id="adjustName"></select>
+<input id="minusNote" placeholder="사유 필수 ✍️">
+<button onclick="minusTotal()">KMT -1</button>
+<button onclick="minusKr()">한국 -1</button>
+
+</div>
+
+</div>
+
+<div style="display:flex; gap:20px; align-items:flex-start;">
+
+  <div>
+    <h3>👥 상담사 (상태 클릭 / 휴무 체크)</h3>
+    <table>
+      <thead>
+<tr class="kmt-head">
+<th>이름</th><th>언어</th><th>KMT</th><th>총 상담인원</th><th>상태</th><th>휴무</th>
+</tr>
+</thead>
+      <tbody id="list"></tbody>
+    </table>
+  </div>
+
+  <div>
+    <h3>🇰🇷 한국 상담 전용</h3>
+<table style="background:#e6f3ff;">
+<thead>
+<tr>
+<th>이름</th><th>언어</th><th>한국</th><th>총 상담인원</th><th>상태</th><th>휴무</th>
+</tr>
+</thead>
+<tbody id="krList"></tbody>
+</table>
+
+<div class="box" style="margin-top:16px;">
+<h3>🔮 다음 상담사</h3>
+
+<div id="previewResult" style="
+margin-top:10px;
+font-weight:700;
+color:#333;
+line-height:1.8;
+font-size:15px;
+">
+한국: -<br>
+기타: -
+</div>
+
+</div>
+
+</div>
+  </div>
+
+</div>
+
+<h3>📜 로그</h3>
+
+<div class="log-container">
+
+<table class="log-table">
+<thead>
+<tr>
+<th>시간</th>
+<th>이름</th>
+<th>언어</th>
+<th>유형</th>
+<th>사유</th>
+</tr>
+</thead>
+
+<tbody id="log"></tbody>
+
+</table>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDvgrLAst86Rpfc8ynUmmy1e2lPMkZSD6w",
+    authDomain: "consulting-board.firebaseapp.com",
+    projectId: "consulting-board",
+    storageBucket: "consulting-board.firebasestorage.app",
+    messagingSenderId: "945610053897",
+    appId: "1:945610053897:web:2ab529369bdfdadebd9bd8",
+    measurementId: "G-VMJ6ZN0ZKH"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // 파이어베이스에 데이터를 전송하여 실시간 저장하는 핵심 함수
+  window.saveToFirebase = async function() {
+    try {
+      await setDoc(doc(db, "hospital", "vibe_board"), {
+        consultants: window.consultants,
+        logs: window.logs,
+        startIdx: window.startIdx
+      });
+    } catch(e) {
+      console.error("Firebase 실시간 저장 실패:", e);
+    }
+  };
+
+  // 다른 PC에서 데이터를 바꿨을 때 실시간으로 수신해서 화면을 바꾸는 감지기
+  onSnapshot(doc(db, "hospital", "vibe_board"), (snapshot) => {
+    if (snapshot.exists()) {
+      const data = snapshot.data();
+      window.consultants = data.consultants || window.consultants;
+      window.logs = data.logs || window.logs;
+      window.startIdx = data.startIdx || window.startIdx;
+      window.render();
+    } else {
+      window.saveToFirebase();
+    }
+  });
+</script>
+
+<script>
+let consultants=[
+{name:"W",lang:"KR",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"YM",lang:"EN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"U",lang:"CN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"I",lang:"KR",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"PJ",lang:"EN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"Q",lang:"CN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"B",lang:"KR",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"AY",lang:"EN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"KY",lang:"KR",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"JN",lang:"EN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"YA",lang:"KR",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+{name:"CY",lang:"CN",eng:0,total:0,krTotal:0,kmtHistory:"",krHistory:"",status:"on",off:false},
+];
+
+let logs=[];
+let undone=[];
+let startIdx = 0;
+let historyStack = [];
+let historyIndex = -1;
+
+// 전역 연동을 위해 window 객체에 등록
+window.consultants = consultants;
+window.logs = logs;
+window.startIdx = startIdx;
+
+function rotateConsultants(startName){
+  let idx = consultants.findIndex(c => c.name === startName);
+  if(idx === -1) return;
+  consultants = [ ...consultants.slice(idx), ...consultants.slice(0, idx) ];
+  startIdx = 0;
+  window.consultants = consultants;
+  window.startIdx = startIdx;
+}
+
+function toggle(i){
+  let s=consultants[i].status;
+  if(s==="on") consultants[i].status="busy";
+  else if(s==="busy") consultants[i].status="away";
+  else consultants[i].status="on";
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function toggleOff(i){
+  consultants[i].off=!consultants[i].off;
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function setStart(){
+  let name = document.getElementById("startSelect").value;
+  let current = localStorage.getItem("currentStartName");
+  if(current){ localStorage.setItem("prevStartName", current); }
+  localStorage.setItem("currentStartName", name);
+  rotateConsultants(name);
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function saveState(){
+  let snapshot = JSON.stringify({ consultants: consultants, logs: logs, startIdx: startIdx });
+  if(historyStack.length > 0){
+    let last = historyStack[historyIndex];
+    if(last === snapshot) return;
+  }
+  if(historyIndex < historyStack.length - 1){ historyStack = historyStack.slice(0, historyIndex + 1); }
+  historyStack.push(snapshot);
+  historyIndex++;
+  if(historyStack.length > 100){ historyStack.shift(); historyIndex--; }
+}
+
+function goBack(){
+  if(historyIndex <= 0) return;
+  historyIndex--;
+  let state = JSON.parse(historyStack[historyIndex]);
+  consultants = state.consultants; window.consultants = consultants;
+  logs = state.logs; window.logs = logs;
+  startIdx = state.startIdx; window.startIdx = startIdx;
+  if(window.saveToFirebase) window.saveToFirebase();
+  render();
+}
+
+function goForward(){
+  if(historyIndex >= historyStack.length - 1) return;
+  historyIndex++;
+  let state = JSON.parse(historyStack[historyIndex]);
+  consultants = state.consultants; window.consultants = consultants;
+  logs = state.logs; window.logs = logs;
+  startIdx = state.startIdx; window.startIdx = startIdx;
+  if(window.saveToFirebase) window.saveToFirebase();
+  render();
+}
+
+function getNext(type){
+  let base = consultants.filter(c=>c.status==="on" && !c.off);
+  if(type==="KR"){
+    let krList = consultants.filter(c => c.lang==="KR" && c.status==="on" && !c.off);
+    if(krList.length===0) return null;
+    let min = Math.min(...krList.map(c=>c.krTotal));
+    let candidates = krList.filter(c=>c.krTotal === min);
+    let reversed = [...krList].reverse();
+    for(let i=0;i<reversed.length;i++){
+      let idx = (startIdx + i) % reversed.length;
+      let found = candidates.find(c => c.name === reversed[idx].name);
+      if(found) return found;
+    }
+    return candidates[0];
+  } else {
+    if(base.length===0) return null;
+    let min = Math.min(...base.map(c=>c.total));
+    let candidates = base.filter(c=>c.total === min);
+    for(let i=0;i<consultants.length;i++){
+      let k = (startIdx + i) % consultants.length;
+      let found = candidates.find(c=>c.name === consultants[k].name);
+      if(found) return found;
+    }
+    return candidates[0];
+  }
+}
+
+function assign(type){
+  let count = parseInt(document.getElementById("customerCount").value);
+  if(!count || count < 1) return alert("❌ 인원 수 확인");
+  let c = getNext(type);
+  if(!c) return alert("❌ 배정 불가");
+  c.status = "busy";
+  if(type==="KR"){
+    c.krTotal += count;
+    if(!c.krHistory) c.krHistory = "";
+    c.krHistory += count;
+  } else {
+    c.total += count;
+    if(!c.kmtHistory) c.kmtHistory = "";
+    c.kmtHistory += count;
+    if(type==="EN"){ c.eng += count; }
+  }
+  addLog(c.name, type, "일반", "인원:"+count);
+  undone = [];
+  alert(`✅ ${c.name} 배정 (${count}명)`);
+  document.getElementById("customerCount").value = 1;
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function assignException(){
+  let name = exceptionName.value;
+  let type = exceptionType.value;
+  let count = parseInt(document.getElementById("exceptionCount").value);
+  let note = document.getElementById("note").value;
+  if(!count || count < 1) return alert("인원 확인");
+  let c = consultants.find(x => x.name === name);
+  c.status = "busy";
+  if(type === "KR"){ c.krTotal += count; c.krHistory += count; }
+  else { c.total += count; c.kmtHistory += count; }
+  addLog(c.name, type, "예외", note);
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function minusTotal(){
+  let note=minusNote.value;
+  if(!note) return alert("사유 입력");
+  let c=consultants.find(x=>x.name===adjustName.value);
+  if(c.total>0)c.total--;
+  addLog(c.name,"-","차감",note);
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function minusKr(){
+  let note = minusNote.value;
+  if(!note) return alert("사유 입력");
+  let c = consultants.find(x => x.name === adjustName.value);
+  if(c.krTotal > 0) c.krTotal--;
+  addLog(c.name, "KR", "차감", note);
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function minusEng(){
+  let note=minusNote.value;
+  if(!note) return alert("사유 입력");
+  let c=consultants.find(x=>x.name===adjustName.value);
+  if(c.eng>0)c.eng--;
+  addLog(c.name,"EN","차감",note);
+  saveState();
+  if(window.saveToFirebase) window.saveToFirebase(); // 서버 전송
+  render();
+}
+
+function addLog(name,type,mode,note){
+  let t=new Date().toLocaleTimeString();
+  logs.unshift({time:t,name,type,mode,note});
+  window.logs = logs;
+}
+
+function render(){
+  let selStart = document.getElementById("startSelect");
+  let currentVal = selStart.value;
+  selStart.innerHTML = "";
+  consultants.forEach(c=>{ selStart.innerHTML += `<option>${c.name}</option>`; });
+  if(currentVal) selStart.value = currentVal;
+
+  let current = localStorage.getItem("currentStartName");
+  let prev = localStorage.getItem("prevStartName");
+  let currentText = current ? "👉 오늘 시작: " + current : "";
+  let prevText = prev ? " (이전: " + prev + ")" : "";
+  document.getElementById("currentStart").innerText = currentText + prevText;
+  document.getElementById("prevStart").innerText = "";
+
+  let list=document.getElementById("list");
+  list.innerHTML="";
+  consultants.forEach((c,i)=>{
+    let cls="", text="";
+    if(c.off){ cls="off"; text="⚫ 휴무"; }
+    else{
+      if(c.status==="on"){cls="on"; text="🟢 대기";}
+      else if(c.status==="busy"){cls="busy"; text="🟡 상담중";}
+      else{cls="away"; text="🔴 부재";}
+    }
+    list.innerHTML+=`
+    <tr class="${cls}">
+    <td>${c.name}</td>
+    <td>${c.lang}</td>
+    <td>${c.kmtHistory}</td>
+    <td>${c.total}</td>
+    <td onclick="toggle(${i})" style="cursor:pointer;">${text}</td>
+    <td><input type="checkbox" ${c.off?"checked":""} onclick="toggleOff(${i})"></td>
+    </tr>`;
+  });
+
+  let sel=exceptionName;
+  let sel2=adjustName;
+  let v1 = sel.value, v2 = sel2.value;
+  sel.innerHTML=""; sel2.innerHTML="";
+  consultants.forEach(c=>{
+    sel.innerHTML+=`<option>${c.name}</option>`;
+    sel2.innerHTML+=`<option>${c.name}</option>`;
+  });
+  if(v1) sel.value = v1; if(v2) sel2.value = v2;
+
+  let log=document.getElementById("log");
+  log.innerHTML="";
+  logs.forEach(l=>{
+    let cls = "";
+    if(l.mode === "차감") cls = "minus-row";
+    else if(l.mode === "예외") cls = "exception-row";
+    log.innerHTML+=`
+    <tr class="${cls}">
+    <td>${l.time}</td>
+    <td>${l.name}</td>
+    <td>${l.type}</td>
+    <td>${l.mode}</td>
+    <td>${l.note}</td>
+    </tr>`;
+  });
+
+  let krList = document.getElementById("krList");
+  krList.innerHTML = "";
+  consultants.filter(c => c.lang === "KR").forEach((c) => {
+    let idx = consultants.findIndex(x => x.name === c.name);
+    let cls = "", text = "";
+    if(c.off){ cls = "off"; text = "⚫ 휴무"; }
+    else{
+      if(c.status === "on"){cls="on"; text="🟢 대기";}
+      else if(c.status === "busy"){cls="busy"; text="🟡 상담중";}
+      else{cls="away"; text="🔴 부재";}
+    }
+    krList.innerHTML += `
+    <tr class="${cls}">
+    <td>${c.name}</td>
+    <td>${c.lang}</td>
+    <td>${c.krHistory}</td>
+    <td>${c.krTotal}</td>
+    <td onclick="toggle(${idx})" style="cursor:pointer;">${text}</td>
+    <td><input type="checkbox" ${c.off?"checked":""} onclick="toggleOff(${idx})"></td>
+    </tr>`;
+  });
+
+  // 다음 상담사 예측 로직
+  let krPreview = [];
+  let otherPreview = [];
+  {
+    let tempTotals = consultants.map(c=>({ name:c.name, krTotal:c.krTotal }));
+    for(let i=0;i<3;i++){
+      let krL = consultants.filter(c => c.lang==="KR" && c.status==="on" && !c.off);
+      if(krL.length===0) break;
+      let min = Math.min(...krL.map(c=>{ let t=tempTotals.find(x=>x.name===c.name); return t.krTotal; }));
+      let candidates = krL.filter(c=>{ let t=tempTotals.find(x=>x.name===c.name); return t.krTotal===min; });
+      let reversed=[...krL].reverse();
+      let selected=null;
+      for(let j=0;j<reversed.length;j++){
+        let k=(startIdx+j)%reversed.length;
+        let found=candidates.find(c=>c.name===reversed[k].name);
+        if(found){ selected=found; break; }
+      }
+      if(!selected) selected=candidates[0];
+      krPreview.push(selected.name);
+      let t=tempTotals.find(x=>x.name===selected.name);
+      t.krTotal += 1;
+    }
+  }
+  {
+    let tempTotals = consultants.map(c=>({ name:c.name, total:c.total }));
+    for(let i=0;i<3;i++){
+      let base = consultants.filter(c => c.status==="on" && !c.off);
+      if(base.length===0) break;
+      let min=Math.min(...base.map(c=>{ let t=tempTotals.find(x=>x.name===c.name); return t.total; }));
+      let candidates=base.filter(c=>{ let t=tempTotals.find(x=>x.name===c.name); return t.total===min; });
+      let selected=null;
+      for(let j=0;j<consultants.length;j++){
+        let k=(startIdx+j)%consultants.length;
+        let found=candidates.find(c=>c.name===consultants[k].name);
+        if(found){ selected=found; break; }
+      }
+      if(!selected) selected=candidates[0];
+      otherPreview.push(selected.name);
+      let t=tempTotals.find(x=>x.name===selected.name);
+      t.total += 1;
+    }
+  }
+  document.getElementById("previewResult").innerHTML = `기타: ${otherPreview.join(" → ")}<br>한국: ${krPreview.join(" → ")}`;
+}
+
+// 브라우저 윈도우 스코프 등록용
+window.render = render;
+
+window.onload=function(){
+  render();
+  historyStack = [];
+  historyIndex = -1;
+  saveState();
+}
+
+document.addEventListener("keydown", function(e){
+  let tag = document.activeElement.tagName;
+  if(tag === "INPUT" || tag === "TEXTAREA") return;
+  if(e.ctrlKey && e.key === "z"){ e.preventDefault(); goBack(); }
+  if(e.ctrlKey && e.key === "y"){ e.preventDefault(); goForward(); }
+  if(e.ctrlKey && e.shiftKey && e.key === "Z"){ e.preventDefault(); goForward(); }
+});
+</script>
+</body>
+</html>
